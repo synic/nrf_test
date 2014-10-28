@@ -46,7 +46,7 @@ void nrf24_init(void) {
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE); 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);   
 
-     GPIO_InitTypeDef PORT;
+    GPIO_InitTypeDef PORT;
     // Configure SPI pins
     PORT.GPIO_Speed = GPIO_Speed_2MHz;
     PORT.GPIO_Pin = SPI_SCK_PIN | SPI_MOSI_PIN;
@@ -66,19 +66,21 @@ void nrf24_init(void) {
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_5);
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_5);
 
-       // Configure CS pin as output with Push-Pull
+    // Configure CS pin as output with Push-Pull
     PORT.GPIO_Pin = SPI_CS_PIN;
     PORT.GPIO_Mode = GPIO_Mode_OUT;
     PORT.GPIO_OType = GPIO_OType_PP;
     PORT.GPIO_Speed = GPIO_Speed_2MHz;
     PORT.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(SPI_GPIO_PORT, &PORT);
+
     // Configure CE pin as output with Push-Pull
     PORT.GPIO_Pin = nRF24_CE_PIN;
     PORT.GPIO_Mode = GPIO_Mode_OUT;
     PORT.GPIO_Speed = GPIO_Speed_2MHz;
     PORT.GPIO_OType = GPIO_OType_PP;
     GPIO_Init(nRF24_CE_PORT, &PORT);
+
     // Configure IRQ pin as input with Pull-Up
     PORT.GPIO_Pin = nRF24_IRQ_PIN;
     PORT.GPIO_Mode = GPIO_Mode_IN;
@@ -131,6 +133,7 @@ uint8_t nrf24_check(void) {
 
     nrf24_write_buf(nRF24_CMD_WREG | nRF24_REG_TX_ADDR, txbuf, 5); // Write fake TX address
     nrf24_read_buf(nRF24_REG_TX_ADDR, rxbuf, 5); // Try to read TX_ADDR register
+
     for (i = 0; i < 5; i++) if (rxbuf[i] != txbuf[i]) return 1;
 
     return 0;
