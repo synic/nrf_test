@@ -15,12 +15,12 @@
 #define nRF24_IRQ_PIN     GPIO_Pin_10    // PB10
 
 // Chip Enable Activates RX or TX mode
-#define CE_L() GPIO_ResetBits(nRF24_CE_PORT,nRF24_CE_PIN)
-#define CE_H() GPIO_SetBits(nRF24_CE_PORT,nRF24_CE_PIN)
+#define CE_L() GPIO_ResetBits(nRF24_CE_PORT, nRF24_CE_PIN)
+#define CE_H() GPIO_SetBits(nRF24_CE_PORT, nRF24_CE_PIN)
 
 // SPI Chip Select
-#define CSN_L() GPIO_ResetBits(SPI_GPIO_PORT,SPI_CS_PIN)
-#define CSN_H() GPIO_SetBits(SPI_GPIO_PORT,SPI_CS_PIN)
+#define CSN_L() GPIO_ResetBits(SPI_GPIO_PORT, SPI_CS_PIN)
+#define CSN_H() GPIO_SetBits(SPI_GPIO_PORT, SPI_CS_PIN)
 
 #define nRF24_CMD_WREG             0x20  // W_REGISTER -> Write command and status registers
 #define nRF24_REG_TX_ADDR          0x10  // Transmit address
