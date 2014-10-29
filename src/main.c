@@ -127,7 +127,7 @@ uint8_t nrf24_write_buf(uint8_t reg, uint8_t *pBuf, uint8_t count) {
 
 
 uint8_t nrf24_check(void) {
-    uint8_t txbuf[5] = { 0xA8,0xA8,0xA8,0xA8,0xA8 };
+    uint8_t txbuf[5] = { 0xA9,0xA9,0xA9,0xA9,0xA9 };
     uint8_t rxbuf[5];
     uint8_t i;
 
