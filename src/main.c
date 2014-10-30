@@ -37,7 +37,7 @@ void spi_init(uint16_t prescaler) {
     SPI.SPI_FirstBit = SPI_FirstBit_MSB;
     SPI.SPI_NSS = SPI_NSS_Soft;
     SPI_Init(SPI_PORT,&SPI);
-
+    SPI_RxFIFOThresholdConfig(SPI_PORT, SPI_RxFIFOThreshold_QF);
     SPI_NSSInternalSoftwareConfig(SPI_PORT, SPI_NSSInternalSoft_Set);
 }
 
@@ -95,11 +95,18 @@ void nrf24_init(void) {
     CE_L();
 }
 
-uint8_t nrf24_read_write(uint8_t data) {
+uint8_t _nrf24_read_write(uint8_t data) {
     while (SPI_I2S_GetFlagStatus(SPI_PORT, SPI_I2S_FLAG_TXE) == RESET); // Wait while DR register is not empty
-    SPI_I2S_SendData16(SPI_PORT, data); // Send byte to SPI
+    SPI_SendData8(SPI_PORT, data); // Send byte to SPI
     while (SPI_I2S_GetFlagStatus(SPI_PORT, SPI_I2S_FLAG_RXNE) == RESET); // Wait to receive byte
-    return SPI_I2S_ReceiveData16(SPI_PORT); // Read byte from SPI bus
+    return SPI_ReceiveData8(SPI_PORT); // Read byte from SPI bus
+}
+
+uint8_t nrf24_read_write(uint8_t data) {
+    while((SPI1->SR & SPI_I2S_FLAG_TXE) == RESET);
+    SPI_SendData8(SPI_PORT, data);
+    while((SPI1->SR & SPI_I2S_FLAG_RXNE) == RESET);
+    return SPI_ReceiveData8(SPI_PORT);
 }
 
 uint8_t nrf24_read_buf(uint8_t reg, uint8_t *pBuf, uint8_t count) {
