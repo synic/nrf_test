@@ -41,9 +41,13 @@ SRCS = \
   main.c \
   stm32f30x_it.c \
   system_stm32f30x.c \
+  aolib.c 
  
 SRCSASM = \
   startup_stm32f30x.s 
+
+SRSCPP = \
+  rf24.cpp
 
 # #####################################
 # firmware library
@@ -57,7 +61,7 @@ PERIPHLIB_SOURCES = \
 #######################################
 # binaries
 #######################################
-CC = arm-none-eabi-gcc
+CC = arm-none-eabi-g++
 AS = arm-none-eabi-gcc -x assembler-with-cpp
 CP = arm-none-eabi-objcopy
 AR = arm-none-eabi-ar
@@ -91,6 +95,7 @@ CFLAGS += -g -gdwarf-2 -fno-common -fdata-sections -ffunction-sections
 endif
 # Generate dependency information
 CFLAGS += -MD -MP -MF .dep/$(@F).d
+CFLAGS += -fno-rtti -fno-exceptions
 
 #######################################
 # LDFLAGS
@@ -115,10 +120,14 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex
 PERIPHLIB_OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(PERIPHLIB_SOURCES:.c=.o)))
 # list of C program objects
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRCS:.c=.o)))
+OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(SRCSCPP:.cpp=.o)))
 # list of ASM program objects
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(SRCSASM:.s=.o)))
 
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR) 
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)

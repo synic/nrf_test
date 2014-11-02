@@ -29,6 +29,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f30x_it.h"
+#include "main.h"
 
 /** @addtogroup STM32F30x_StdPeriph_Templates
   * @{
@@ -140,6 +141,7 @@ void PendSV_Handler(void)
   */
 void SysTick_Handler(void)
 {
+    systick_handler();
 }
 
 /******************************************************************************/
