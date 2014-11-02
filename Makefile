@@ -38,7 +38,6 @@ BUILD_DIR = build
 # source
 # #####################################
 SRCS = \
-  main.c \
   stm32f30x_it.c \
   system_stm32f30x.c \
   aolib.c 
@@ -46,7 +45,8 @@ SRCS = \
 SRCSASM = \
   startup_stm32f30x.s 
 
-SRSCPP = \
+SRCSCPP = \
+  main.cpp \
   rf24.cpp
 
 # #####################################
@@ -62,7 +62,7 @@ PERIPHLIB_SOURCES = \
 # binaries
 #######################################
 CC = arm-none-eabi-g++
-AS = arm-none-eabi-gcc -x assembler-with-cpp
+AS = arm-none-eabi-g++ -x assembler-with-cpp
 CP = arm-none-eabi-objcopy
 AR = arm-none-eabi-ar
 SZ = arm-none-eabi-size
@@ -95,7 +95,7 @@ CFLAGS += -g -gdwarf-2 -fno-common -fdata-sections -ffunction-sections
 endif
 # Generate dependency information
 CFLAGS += -MD -MP -MF .dep/$(@F).d
-CFLAGS += -fno-rtti -fno-exceptions
+CFLAGS += -fno-rtti -fno-exceptions -Wno-pmf-conversions -std=c++11 
 
 #######################################
 # LDFLAGS
@@ -104,7 +104,7 @@ CFLAGS += -fno-rtti -fno-exceptions
 LDSCRIPT = linker/STM32F303VC_FLASH.ld
 # libraries
 LIBS = -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
-LIBS = -lc -lm -lnosys
+# LIBS = -lc -lm -lnosys
 LIBDIR =
 LDFLAGS = -mthumb -mcpu=cortex-m4 -specs=nano.specs -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 

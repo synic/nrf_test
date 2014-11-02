@@ -53,7 +53,7 @@ class RF24 {
         bool p_variant;
         uint8_t payload_size;
         bool ack_payload_available;
-        bool dynamic_payloads_available;
+        bool dynamic_payloads_enabled;
         uint8_t ack_payload_length;
         uint64_t pipe0_reading_address;
     

@@ -1,5 +1,8 @@
 #include "nrf24l01.h"
-#include "RF24.h"
+#include "rf24.h"
+#include "aolib.h"
+#include "binary.h"
+#include <cstddef>
 
 void RF24::spi_init(uint16_t prescaler) {
     SPI_InitTypeDef SPI;
@@ -78,7 +81,7 @@ uint8_t RF24::spi_transfer(uint8_t data) {
     return SPI_ReceiveData8(SPI_PORT);
 }
 
-uint8_t RF24:read_register(uint8_t reg, uint8_t* buf, uint8_t len) {
+uint8_t RF24::read_register(uint8_t reg, uint8_t* buf, uint8_t len) {
     uint8_t status;
 
     CSN_L();
@@ -106,7 +109,7 @@ uint8_t RF24::write_register(uint8_t reg, const uint8_t* buf, uint8_t len) {
     uint8_t status;
 
     CSN_L();
-    spi_transfer(W_REGISTER | (REGISTER_MASK & reg));
+    status = spi_transfer(W_REGISTER | (REGISTER_MASK & reg));
     while(len--) {
         spi_transfer(*buf++);
     }
@@ -149,7 +152,7 @@ uint8_t RF24::write_payload(const void* buf, uint8_t len) {
     return status;
 }
 
-uint8_t RF24:read_payload(void* buf, uint8_t len) {
+uint8_t RF24::read_payload(void* buf, uint8_t len) {
     uint8_t status;
     uint8_t* current = reinterpret_cast<uint8_t*>(buf);
 
@@ -181,7 +184,7 @@ uint8_t RF24::flush_rx(void) {
     return status;
 }
 
-uint8_t RF24:flush_tx(void) {
+uint8_t RF24::flush_tx(void) {
     uint8_t status;
     CSN_L();
     status = spi_transfer(FLUSH_TX);
@@ -203,7 +206,7 @@ RF24::RF24() :
     wide_band(true), p_variant(false),
     payload_size(32), ack_payload_available(false), 
     dynamic_payloads_enabled(false),
-    pipe0_reading_address(0);
+    pipe0_reading_address(0)
 {
 }
 
@@ -212,7 +215,7 @@ void RF24::setChannel(uint8_t channel) {
     write_register(RF_CH, (channel <= max_channel) ? channel : max_channel);
 }
 
-void RF24::setPayoloadSize(uint8_t size) {
+void RF24::setPayloadSize(uint8_t size) {
     const uint8_t max_payload_size = 32;
     payload_size = (size <= max_payload_size) ? size : max_payload_size;
 }
@@ -222,7 +225,6 @@ uint8_t RF24::getPayloadSize(void) {
 }
 
 void RF24::begin(void) {
-    spi_init();
     nrf24_init();
 
     delay(5);
@@ -387,15 +389,15 @@ void RF24::openReadingPipe(uint8_t child, uint64_t address) {
 
     if(child <= 6) {
         if(child < 2) {
-            write_register(&child_pipe[child], reinterpret_cast<const uint8_t*>(&address), 5);
+            write_register(child_pipe[child], reinterpret_cast<const uint8_t*>(&address), 5);
         }
         else {
-            write_register(&child_pipe[child], reinterpret_cast<const uint8_t*>(&address), 1);
+            write_register(child_pipe[child], reinterpret_cast<const uint8_t*>(&address), 1);
         }
 
-        write_register(&child_payload_size[child], payload_size);
+        write_register(child_payload_size[child], payload_size);
 
-        write_register(EN_RXADDR, read_register(EN_RXADDR) | _BV(&child_pipe_enable[child]));
+        write_register(EN_RXADDR, read_register(EN_RXADDR) | _BV(child_pipe_enable[child]));
     }
 }
 
@@ -414,7 +416,7 @@ void RF24::enableDynamicPayloads(void) {
         write_register(FEATURE, read_register(FEATURE) | _BV(EN_DPL));
     }
 
-    write_register(DYNP, read_register(DYNPD) | _BV(DPL_P5) | _BV(DPL_P4) | _BV(DPL_P3) | _BV(DPL_P2) | _BV(DPL_P1) | _BV(DPL_P0));
+    write_register(DYNPD, read_register(DYNPD) | _BV(DPL_P5) | _BV(DPL_P4) | _BV(DPL_P3) | _BV(DPL_P2) | _BV(DPL_P1) | _BV(DPL_P0));
 
     dynamic_payloads_enabled = true;
 }
@@ -444,7 +446,7 @@ void RF24::writeAckPayload(uint8_t pipe, const void* buf, uint8_t len) {
     CSN_H();
 }
 
-void RF24::isAckPayloadAvailable(void) {
+bool RF24::isAckPayloadAvailable(void) {
     bool result = ack_payload_available;
     ack_payload_available = false;
     return result;
