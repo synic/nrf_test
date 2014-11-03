@@ -29,7 +29,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f30x_it.h"
-#include "main.h"
+#include "aolib.h"
 
 /** @addtogroup STM32F30x_StdPeriph_Templates
   * @{

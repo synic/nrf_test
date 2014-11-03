@@ -56,6 +56,7 @@ SRCSCPP = \
 PERIPHLIB_SOURCES = \
   stm32f30x_gpio.c \
   stm32f30x_rcc.c \
+  stm32f30x_tim.c \
   stm32f30x_spi.c
 
 #######################################

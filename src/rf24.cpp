@@ -4,6 +4,10 @@
 #include "binary.h"
 #include <cstddef>
 
+#define PROGMEM
+#define pgm_read_word(p) (*(p)) 
+#define pgm_read_byte(p) (*(p)) 
+
 void RF24::spi_init(uint16_t prescaler) {
     SPI_InitTypeDef SPI;
     SPI.SPI_Mode = SPI_Mode_Master;
@@ -27,14 +31,14 @@ void RF24::nrf24_init(void) {
 
     GPIO_InitTypeDef PORT;
     // Configure SPI pins
-    PORT.GPIO_Speed = GPIO_Speed_2MHz;
+    PORT.GPIO_Speed = GPIO_Speed_50MHz;
     PORT.GPIO_Pin = SPI_SCK_PIN | SPI_MOSI_PIN;
     PORT.GPIO_Mode = GPIO_Mode_AF;
     PORT.GPIO_OType = GPIO_OType_PP;
     PORT.GPIO_PuPd = GPIO_PuPd_DOWN;
     GPIO_Init(SPI_GPIO_PORT, &PORT);
 
-    PORT.GPIO_Speed = GPIO_Speed_2MHz;
+    PORT.GPIO_Speed = GPIO_Speed_50MHz;
     PORT.GPIO_Pin = SPI_MISO_PIN;
     PORT.GPIO_Mode = GPIO_Mode_AF;
     PORT.GPIO_OType = GPIO_OType_PP;
@@ -49,14 +53,13 @@ void RF24::nrf24_init(void) {
     PORT.GPIO_Pin = SPI_CS_PIN;
     PORT.GPIO_Mode = GPIO_Mode_OUT;
     PORT.GPIO_OType = GPIO_OType_PP;
-    PORT.GPIO_Speed = GPIO_Speed_2MHz;
-    PORT.GPIO_PuPd = GPIO_PuPd_UP;
+    PORT.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(SPI_GPIO_PORT, &PORT);
 
     // Configure CE pin as output with Push-Pull
     PORT.GPIO_Pin = nRF24_CE_PIN;
     PORT.GPIO_Mode = GPIO_Mode_OUT;
-    PORT.GPIO_Speed = GPIO_Speed_2MHz;
+    PORT.GPIO_Speed = GPIO_Speed_50MHz;
     PORT.GPIO_OType = GPIO_OType_PP;
     GPIO_Init(nRF24_CE_PORT, &PORT);
 
@@ -69,9 +72,6 @@ void RF24::nrf24_init(void) {
 
     spi_init(SPI_BaudRatePrescaler_16); // Which SPI speed do we need?
     SPI_Cmd(SPI_PORT, ENABLE);
-
-    CSN_H();
-    CE_L();
 }
 
 uint8_t RF24::spi_transfer(uint8_t data) {
@@ -212,7 +212,9 @@ RF24::RF24() :
 
 void RF24::setChannel(uint8_t channel) {
     const uint8_t max_channel = 127;
-    write_register(RF_CH, (channel <= max_channel) ? channel : max_channel);
+    uint8_t ch = (channel <= max_channel) ? channel : max_channel;
+
+    write_register(RF_CH, ch);
 }
 
 void RF24::setPayloadSize(uint8_t size) {
@@ -227,7 +229,10 @@ uint8_t RF24::getPayloadSize(void) {
 void RF24::begin(void) {
     nrf24_init();
 
-    delay(5);
+    CE_L();
+    CSN_H();
+
+    delay_ms(5);
 
     write_register(SETUP_RETR, (B0100 << ARD) | (B1111 << ARC));
     setPALevel(RF24_PA_MAX);
@@ -247,11 +252,10 @@ void RF24::begin(void) {
 
 void RF24::startListening(void) {
     write_register(CONFIG, read_register(CONFIG) | _BV(PWR_UP) | _BV(PRIM_RX));
-    write_register(CONFIG, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
+    write_register(STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
 
     if(pipe0_reading_address) {
-        write_register(RX_ADDR_P0, reinterpret_cast<const uint8_t*>(
-            &pipe0_reading_address), 5);
+        write_register(RX_ADDR_P0, reinterpret_cast<const uint8_t*>(&pipe0_reading_address), 5);
     }
 
     flush_rx();
@@ -259,7 +263,7 @@ void RF24::startListening(void) {
 
     CE_H();
 
-    delay_us(150);
+    delay_us(130);
 }
 
 void RF24::stopListening(void) {
@@ -336,7 +340,7 @@ bool RF24::available(uint8_t* pipe_num) {
 
     if(result) {
         if(pipe_num) {
-            *pipe_num = (status > RX_P_NO) & B111;
+            *pipe_num = (status >> RX_P_NO) & B111;
         }
 
         write_register(STATUS, _BV(RX_DR));
@@ -366,19 +370,18 @@ void RF24::openWritingPipe(uint64_t value) {
     write_register(TX_ADDR, reinterpret_cast<uint8_t*>(&value), 5);
 
     const uint8_t max_payload_size = 32;
-    write_register(RX_PW_P0, (payload_size <= max_payload_size) ? 
-        payload_size : max_payload_size);
+    write_register(RX_PW_P0, (payload_size <= max_payload_size) ?  payload_size : max_payload_size);
 }
 
-static const uint8_t child_pipe[] = {
+static const uint8_t child_pipe[] PROGMEM = {
     RX_ADDR_P0, RX_ADDR_P1, RX_ADDR_P2, RX_ADDR_P3, RX_ADDR_P4, RX_ADDR_P5
 };
 
-static const uint8_t child_payload_size[] = {
+static const uint8_t child_payload_size[] PROGMEM = {
     RX_PW_P0, RX_PW_P1, RX_PW_P2, RX_PW_P3, RX_PW_P4, RX_PW_P5
 };
 
-static const uint8_t child_pipe_enable[] {
+static const uint8_t child_pipe_enable[] PROGMEM {
     ERX_P0, ERX_P1, ERX_P2, ERX_P3, ERX_P4, ERX_P5
 };
 
@@ -389,15 +392,15 @@ void RF24::openReadingPipe(uint8_t child, uint64_t address) {
 
     if(child <= 6) {
         if(child < 2) {
-            write_register(child_pipe[child], reinterpret_cast<const uint8_t*>(&address), 5);
+            write_register(pgm_read_byte(&child_pipe[child]), reinterpret_cast<const uint8_t*>(&address), 5);
         }
         else {
-            write_register(child_pipe[child], reinterpret_cast<const uint8_t*>(&address), 1);
+            write_register(pgm_read_byte(&child_pipe[child]), reinterpret_cast<const uint8_t*>(&address), 1);
         }
 
-        write_register(child_payload_size[child], payload_size);
+        write_register(pgm_read_byte(&child_payload_size[child]), payload_size);
 
-        write_register(EN_RXADDR, read_register(EN_RXADDR) | _BV(child_pipe_enable[child]));
+        write_register(EN_RXADDR, read_register(EN_RXADDR) | _BV(pgm_read_byte(&child_pipe_enable[child])));
     }
 }
 
@@ -549,12 +552,12 @@ bool RF24::setDataRate(rf24_datarate_e speed) {
         // Set 2Mbs, RF_DR (RF_DR_HIGH) is set 1
         // Making it '01'
         if(speed == RF24_2MBPS) {
-        wide_band = true ;
-        setup |= _BV(RF_DR_HIGH);
+            wide_band = true ;
+            setup |= _BV(RF_DR_HIGH);
         }
         else {
-        // 1Mbs
-        wide_band = false;
+            // 1Mbs
+            wide_band = false;
         }
     }
     write_register(RF_SETUP, setup);

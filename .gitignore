@@ -69,3 +69,4 @@ eagle.epf
 kicad/gerber/
 _autosave*
 format
+logic_data/
