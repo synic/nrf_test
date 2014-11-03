@@ -45,9 +45,10 @@ void RF24::nrf24_init(void) {
     PORT.GPIO_PuPd = GPIO_PuPd_NOPULL;
     GPIO_Init(SPI_GPIO_PORT, &PORT);
 
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_5);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_5);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_5);
+        
+    GPIO_PinAFConfig(SPI_GPIO_PORT, get_pinsource(SPI_SCK_PIN), SPI_GPIO_ALT); 
+    GPIO_PinAFConfig(SPI_GPIO_PORT, get_pinsource(SPI_MISO_PIN), SPI_GPIO_ALT); 
+    GPIO_PinAFConfig(SPI_GPIO_PORT, get_pinsource(SPI_MOSI_PIN), SPI_GPIO_ALT); 
 
     // Configure CS pin as output with Push-Pull
     PORT.GPIO_Pin = SPI_CS_PIN;
@@ -359,7 +360,8 @@ bool RF24::read( void *buf, uint8_t len) {
 }
 
 void RF24::whatHappened(bool& tx_ok, bool& tx_fail, bool& rx_ready) {
-    uint8_t status = write_register(STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
+    uint8_t status = write_register(STATUS, _BV(RX_DR) | 
+        _BV(TX_DS) | _BV(MAX_RT));
     tx_ok = status & _BV(TX_DS);
     tx_fail = status & _BV(MAX_RT);
     rx_ready = status & _BV(RX_DR);
@@ -370,7 +372,8 @@ void RF24::openWritingPipe(uint64_t value) {
     write_register(TX_ADDR, reinterpret_cast<uint8_t*>(&value), 5);
 
     const uint8_t max_payload_size = 32;
-    write_register(RX_PW_P0, (payload_size <= max_payload_size) ?  payload_size : max_payload_size);
+    write_register(RX_PW_P0, (payload_size <= max_payload_size) ?  
+        payload_size : max_payload_size);
 }
 
 static const uint8_t child_pipe[] PROGMEM = {
@@ -392,15 +395,18 @@ void RF24::openReadingPipe(uint8_t child, uint64_t address) {
 
     if(child <= 6) {
         if(child < 2) {
-            write_register(pgm_read_byte(&child_pipe[child]), reinterpret_cast<const uint8_t*>(&address), 5);
+            write_register(pgm_read_byte(&child_pipe[child]), 
+                reinterpret_cast<const uint8_t*>(&address), 5);
         }
         else {
-            write_register(pgm_read_byte(&child_pipe[child]), reinterpret_cast<const uint8_t*>(&address), 1);
+            write_register(pgm_read_byte(&child_pipe[child]), 
+                reinterpret_cast<const uint8_t*>(&address), 1);
         }
 
         write_register(pgm_read_byte(&child_payload_size[child]), payload_size);
 
-        write_register(EN_RXADDR, read_register(EN_RXADDR) | _BV(pgm_read_byte(&child_pipe_enable[child])));
+        write_register(EN_RXADDR, read_register(EN_RXADDR) | 
+            _BV(pgm_read_byte(&child_pipe_enable[child])));
     }
 }
 
@@ -419,17 +425,20 @@ void RF24::enableDynamicPayloads(void) {
         write_register(FEATURE, read_register(FEATURE) | _BV(EN_DPL));
     }
 
-    write_register(DYNPD, read_register(DYNPD) | _BV(DPL_P5) | _BV(DPL_P4) | _BV(DPL_P3) | _BV(DPL_P2) | _BV(DPL_P1) | _BV(DPL_P0));
+    write_register(DYNPD, read_register(DYNPD) | _BV(DPL_P5) | _BV(DPL_P4) | 
+        _BV(DPL_P3) | _BV(DPL_P2) | _BV(DPL_P1) | _BV(DPL_P0));
 
     dynamic_payloads_enabled = true;
 }
 
 void RF24::enableAckPayload(void) {
-    write_register(FEATURE, read_register(FEATURE) | _BV(EN_ACK_PAY) | _BV(EN_DPL));
+    write_register(FEATURE, 
+        read_register(FEATURE) | _BV(EN_ACK_PAY) | _BV(EN_DPL));
 
     if(!read_register(FEATURE)) {
         toggle_features();
-        write_register(FEATURE, read_register(FEATURE) | _BV(EN_ACK_PAY) | _BV(EN_DPL));
+        write_register(FEATURE, read_register(FEATURE) | _BV(EN_ACK_PAY)
+            | _BV(EN_DPL));
     }
 
     write_register(DYNPD, read_register(DYNPD) | _BV(DPL_P1) | _BV(DPL_P0));
@@ -517,7 +526,8 @@ void RF24::setPALevel(rf24_pa_dbm_e level) {
 
 rf24_pa_dbm_e RF24::getPALevel(void) {
     rf24_pa_dbm_e result = RF24_PA_ERROR;
-    uint8_t power = read_register(RF_SETUP) & (_BV(RF_PWR_LOW) | _BV(RF_PWR_HIGH));
+    uint8_t power = read_register(RF_SETUP) & (_BV(RF_PWR_LOW) | 
+        _BV(RF_PWR_HIGH));
 
     if(power == (_BV(RF_PWR_LOW) | _BV(RF_PWR_HIGH))) {
         result = RF24_PA_MAX;
@@ -543,8 +553,8 @@ bool RF24::setDataRate(rf24_datarate_e speed) {
     wide_band = false;
     setup &= ~(_BV(RF_DR_LOW) | _BV(RF_DR_HIGH));
     if(speed == RF24_250KBPS) {
-        // Must set the RF_DR_LOW to 1; RF_DR_HIGH (used to be RF_DR) is already 0
-        // Making it '10'.
+        // Must set the RF_DR_LOW to 1; RF_DR_HIGH 
+        // (used to be RF_DR) is already 0 Making it '10'.
         wide_band = false ;
         setup |= _BV( RF_DR_LOW );
     }

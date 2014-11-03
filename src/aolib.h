@@ -13,6 +13,7 @@ extern void delay_ms(uint32_t delay);
 extern void delay_us(uint32_t delay);
 extern void systick_handler(void);
 extern void delay_init(void);
+extern uint8_t get_pinsource(uint32_t pin);
 
 uint32_t millis(void);
 

@@ -79,3 +79,7 @@ uint32_t millis() {
 void systick_handler(void) {
     counter++;
 }
+
+uint8_t get_pinsource(uint32_t pin) {
+    return (uint8_t)(pin - 1);
+}
