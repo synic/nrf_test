@@ -256,7 +256,8 @@ void RF24::startListening(void) {
     write_register(STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
 
     if(pipe0_reading_address) {
-        write_register(RX_ADDR_P0, reinterpret_cast<const uint8_t*>(&pipe0_reading_address), 5);
+        write_register(RX_ADDR_P0, 
+            reinterpret_cast<const uint8_t*>(&pipe0_reading_address), 5);
     }
 
     flush_rx();
@@ -292,7 +293,8 @@ bool RF24::write(const void* buf, uint8_t len) {
     do {
         status = read_register(OBSERVE_TX, &observe_tx, 1);
     }
-    while(!(status & (_BV(TX_DS) | _BV(MAX_RT))) && (millis() - sent_at < timeout));
+    while(!(status & (_BV(TX_DS) | _BV(MAX_RT))) 
+        && (millis() - sent_at < timeout));
 
     bool tx_ok, tx_fail;
     whatHappened(tx_ok, tx_fail, ack_payload_available);
@@ -310,7 +312,8 @@ bool RF24::write(const void* buf, uint8_t len) {
 }
 
 void RF24::startWrite(const void* buf, uint8_t len) {
-    write_register(CONFIG, (read_register(CONFIG) | _BV(PWR_UP)) & ~_BV(PRIM_RX));
+    write_register(CONFIG, (read_register(CONFIG) 
+        | _BV(PWR_UP)) & ~_BV(PRIM_RX));
     delay_us(150);
     write_payload(buf, len);
 
